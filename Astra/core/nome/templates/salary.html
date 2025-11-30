@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SevaBandhu - Nurse Salary Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        select, button {
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .value {
+            color: #667eea;
+            font-size: 2.2em;
+            font-weight: bold;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 18px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.5;
+        }
+
+        th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        td {
+            padding: 18px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr {
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9ff;
+            transform: scale(1.01);
+        }
+
+        .department {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .dept-emergency { background: #fee; color: #c00; }
+        .dept-icu { background: #ffe; color: #c60; }
+        .dept-general { background: #efe; color: #060; }
+        .dept-pediatric { background: #eef; color: #06c; }
+        .dept-surgery { background: #fef; color: #c0c; }
+
+        .salary {
+            font-weight: bold;
+            color: #2d6a4f;
+            font-size: 1.1em;
+        }
+
+        .experience {
+            color: #666;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #52b788;
+            color: white;
+        }
+
+        .btn-view:hover { background: #5568d3; }
+        .btn-edit:hover { background: #40916c; }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 SevaBandhu - Nurse Salary Management</h1>
+            <p>Connected Hospital Staff Management System for India</p>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by name, ID, or department...">
+            </div>
+            <div class="filter-group">
+                <select id="departmentFilter">
+                    <option value="">All Departments</option>
+                    <option value="Emergency">Emergency</option>
+                    <option value="ICU">ICU</option>
+                    <option value="General Ward">General Ward</option>
+                    <option value="Pediatric">Pediatric</option>
+                    <option value="Surgery">Surgery</option>
+                </select>
+                <select id="experienceFilter">
+                    <option value="">All Experience Levels</option>
+                    <option value="0-2">0-2 years</option>
+                    <option value="3-5">3-5 years</option>
+                    <option value="6-10">6-10 years</option>
+                    <option value="10+">10+ years</option>
+                </select>
+                <button onclick="resetFilters()">Reset Filters</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Nurses</h3>
+                <div class="value" id="totalNurses">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Average Salary</h3>
+                <div class="value" id="avgSalary">₹0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Payroll</h3>
+                <div class="value" id="totalPayroll">₹0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Departments</h3>
+                <div class="value" id="totalDepts">0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="sortTable('id')">ID</th>
+                        <th class="sortable" onclick="sortTable('name')">Name</th>
+                        <th class="sortable" onclick="sortTable('department')">Department</th>
+                        <th class="sortable" onclick="sortTable('experience')">Experience</th>
+                        <th class="sortable" onclick="sortTable('salary')">Monthly Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Table rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Sample nurse data
+        const nursesData = [
+            { id: 'N001', name: 'Priya Sharma', department: 'Emergency', experience: 8, salary: 45000 },
+            { id: 'N002', name: 'Anjali Verma', department: 'ICU', experience: 12, salary: 55000 },
+            { id: 'N003', name: 'Rajesh Kumar', department: 'General Ward', experience: 5, salary: 35000 },
+            { id: 'N004', name: 'Meera Patel', department: 'Pediatric', experience: 7, salary: 42000 },
+            { id: 'N005', name: 'Sunita Singh', department: 'Surgery', experience: 15, salary: 62000 },
+            { id: 'N006', name: 'Kavita Desai', department: 'Emergency', experience: 3, salary: 32000 },
+            { id: 'N007', name: 'Asha Reddy', department: 'ICU', experience: 10, salary: 50000 },
+            { id: 'N008', name: 'Deepak Joshi', department: 'General Ward', experience: 2, salary: 28000 },
+            { id: 'N009', name: 'Neha Gupta', department: 'Pediatric', experience: 6, salary: 38000 },
+            { id: 'N010', name: 'Ramesh Yadav', department: 'Surgery', experience: 9, salary: 48000 },
+            { id: 'N011', name: 'Pooja Mehta', department: 'Emergency', experience: 4, salary: 36000 },
+            { id: 'N012', name: 'Sanjay Nair', department: 'ICU', experience: 11, salary: 52000 },
+            { id: 'N013', name: 'Rekha Iyer', department: 'General Ward', experience: 7, salary: 40000 },
+            { id: 'N014', name: 'Vinod Pillai', department: 'Pediatric', experience: 5, salary: 37000 },
+            { id: 'N015', name: 'Lakshmi Menon', department: 'Surgery', experience: 13, salary: 58000 }
+        ];
+
+        let currentSort = { column: null, direction: 'asc' };
+        let filteredData = [...nursesData];
+
+        function getDepartmentClass(dept) {
+            const classes = {
+                'Emergency': 'dept-emergency',
+                'ICU': 'dept-icu',
+                'General Ward': 'dept-general',
+                'Pediatric': 'dept-pediatric',
+                'Surgery': 'dept-surgery'
+            };
+            return classes[dept] || 'dept-general';
+        }
+
+        function formatCurrency(amount) {
+            return '₹' + amount.toLocaleString('en-IN');
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-results">No nurses found matching your criteria</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(nurse => `
+                <tr>
+                    <td><strong>${nurse.id}</strong></td>
+                    <td>${nurse.name}</td>
+                    <td><span class="department ${getDepartmentClass(nurse.department)}">${nurse.department}</span></td>
+                    <td class="experience">${nurse.experience} years</td>
+                    <td class="salary">${formatCurrency(nurse.salary)}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-small btn-view" onclick="viewDetails('${nurse.id}')">View</button>
+                            <button class="btn-small btn-edit" onclick="editSalary('${nurse.id}')">Edit</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats(data) {
+            const total = data.length;
+            const avgSalary = total > 0 ? Math.round(data.reduce((sum, n) => sum + n.salary, 0) / total) : 0;
+            const totalPayroll = data.reduce((sum, n) => sum + n.salary, 0);
+            const uniqueDepts = new Set(data.map(n => n.department)).size;
+
+            document.getElementById('totalNurses').textContent = total;
+            document.getElementById('avgSalary').textContent = formatCurrency(avgSalary);
+            document.getElementById('totalPayroll').textContent = formatCurrency(totalPayroll);
+            document.getElementById('totalDepts').textContent = uniqueDepts;
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const deptFilter = document.getElementById('departmentFilter').value;
+            const expFilter = document.getElementById('experienceFilter').value;
+
+            filteredData = nursesData.filter(nurse => {
+                const matchesSearch = nurse.name.toLowerCase().includes(searchTerm) ||
+                                    nurse.id.toLowerCase().includes(searchTerm) ||
+                                    nurse.department.toLowerCase().includes(searchTerm);
+
+                const matchesDept = !deptFilter || nurse.department === deptFilter;
+
+                let matchesExp = true;
+                if (expFilter) {
+                    if (expFilter === '0-2') matchesExp = nurse.experience <= 2;
+                    else if (expFilter === '3-5') matchesExp = nurse.experience >= 3 && nurse.experience <= 5;
+                    else if (expFilter === '6-10') matchesExp = nurse.experience >= 6 && nurse.experience <= 10;
+                    else if (expFilter === '10+') matchesExp = nurse.experience > 10;
+                }
+
+                return matchesSearch && matchesDept && matchesExp;
+            });
+
+            renderTable(filteredData);
+            updateStats(filteredData);
+        }
+
+        function sortTable(column) {
+            const headers = document.querySelectorAll('th');
+            headers.forEach(h => {
+                h.classList.remove('sorted-asc', 'sorted-desc');
+            });
+
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            filteredData.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (currentSort.direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+
+            const header = Array.from(headers).find(h => h.textContent.toLowerCase().includes(column));
+            if (header) {
+                header.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+            }
+
+            renderTable(filteredData);
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('departmentFilter').value = '';
+            document.getElementById('experienceFilter').value = '';
+            filterData();
+        }
+
+        function viewDetails(id) {
+            const nurse = nursesData.find(n => n.id === id);
+            alert(`Nurse Details:\n\nID: ${nurse.id}\nName: ${nurse.name}\nDepartment: ${nurse.department}\nExperience: ${nurse.experience} years\nMonthly Salary: ${formatCurrency(nurse.salary)}\nAnnual Salary: ${formatCurrency(nurse.salary * 12)}`);
+        }
+
+        function editSalary(id) {
+            const nurse = nursesData.find(n => n.id === id);
+            const newSalary = prompt(`Edit salary for ${nurse.name}\nCurrent: ${formatCurrency(nurse.salary)}\n\nEnter new monthly salary (₹):`, nurse.salary);
+            
+            if (newSalary !== null && !isNaN(newSalary) && newSalary > 0) {
+                nurse.salary = parseInt(newSalary);
+                filterData();
+                alert('Salary updated successfully!');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterData);
+        document.getElementById('departmentFilter').addEventListener('change', filterData);
+        document.getElementById('experienceFilter').addEventListener('change', filterData);
+
+        // Initial render
+        filterData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SevaBandhu – Face Match Verification</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Inter, sans-serif;
+    }
+
+    body {
+        background: linear-gradient(to bottom right, #ebf5ff, #ffffff, #e8ffe8);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.08);
+        border: 2px solid #eee;
+    }
+
+    .grid {
+        display: grid;
+        gap: 20px;
+    }
+
+    .grid-2 {
+        grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    }
+
+    video {
+        width: 100%;
+        height: 360px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: black;
+    }
+
+    button {
+        padding: 14px 20px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(to right, #3b82f6, #10b981);
+        color: white;
+    }
+
+    .btn-outline {
+        border: 2px solid black;
+        background: white;
+    }
+
+    .status-box {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .spinner {
+        width: 70px;
+        height: 70px;
+        border: 6px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: auto;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .hidden { display: none; }
+
+    #scanOverlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,120,255,0.18);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .face-pair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .face-box {
+        border-radius: 12px;
+        border: 1px dashed #d1d5db;
+        padding: 10px;
+        text-align: center;
+        background: #f9fafb;
+    }
+
+    .face-box img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        border-radius: 10px;
+        background: #000;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #22c55e;
+    }
+
+    .badge-fail {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #ef4444;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div style="text-align:center; margin-bottom:30px;">
+        <div style="display:flex; justify-content:center; gap:15px; align-items:center;">
+            <div style="width:55px; height:55px; background:linear-gradient(to right,#3b82f6,#22c55e); border-radius:12px; display:flex; justify-content:center; align-items:center;">
+                <i data-lucide="user-check" style="width:32px; height:32px; color:white;"></i>
+            </div>
+            <h1 style="font-size:44px; font-weight:800; background:linear-gradient(to right,#2563eb,#16a34a); -webkit-background-clip:text; color:transparent;">
+                SevaBandhu
+            </h1>
+        </div>
+        <p style="font-size:18px; color:gray; margin-top:10px;">
+            Face Match Verification – Compare Stored Image with Live Camera
+        </p>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid grid-2">
+
+        <!-- CAMERA CARD -->
+        <div class="card">
+            <h2 style="font-size:24px; font-weight:700; margin-bottom:10px;">
+                <i data-lucide="camera"></i> Live Camera
+            </h2>
+
+            <div style="position:relative; overflow:hidden; border-radius:12px; background:black;">
+                <video id="video" autoplay muted playsinline></video>
+
+                <div id="scanOverlay">
+                    <div class="spinner"></div>
+                    <p style="margin-top:15px; color:white; font-size:20px;">Scanning & Matching…</p>
+                </div>
+            </div>
+
+            <canvas id="canvas" style="display:none;"></canvas>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button id="startBtn" class="btn-primary" style="flex:1;">
+                    Start Camera
+                </button>
+
+                <button id="recBtn" class="btn-primary hidden" style="flex:1;">
+                    <i data-lucide="scan-face"></i> Match Face
+                </button>
+
+                <button id="stopBtn" class="btn-outline hidden">Stop</button>
+            </div>
+        </div>
+
+        <!-- RESULT / MATCH CARD -->
+        <div class="card">
+            <h2 style="font-size:24px; font-weight:700; margin-bottom:10px;">Match Result</h2>
+
+            <div id="idleStatus" class="status-box">
+                <i data-lucide="scan" style="width:100px; height:100px; opacity:0.3;"></i>
+                <p style="margin-top:20px; color:gray;">
+                    Start the camera and click <b>Match Face</b> to compare with stored image.
+                </p>
+            </div>
+
+            <div id="scanStatus" class="status-box hidden">
+                <div class="spinner"></div>
+                <p style="margin-top:20px; font-size:18px; color:#2563eb;">Matching live face with stored record…</p>
+            </div>
+
+            <div id="successStatus" class="hidden">
+                <div id="matchBanner" style="padding:14px; border-radius:12px; margin-bottom:12px;">
+                    <!-- Filled dynamically: Match / Not match banner -->
+                </div>
+
+                <div id="staffDetails" style="font-size:16px; margin-bottom:10px;"></div>
+
+                <div class="face-pair">
+                    <div class="face-box">
+                        <p style="font-weight:600; margin-bottom:8px;">Stored / Registered Image</p>
+                        <img id="refImage" src="" alt="Reference face (from database)">
+                    </div>
+                    <div class="face-box">
+                        <p style="font-weight:600; margin-bottom:8px;">Live Captured Image</p>
+                        <img id="liveImage" src="" alt="Live captured face">
+                    </div>
+                </div>
+
+                <button onclick="resetAll()" class="btn-outline" style="margin-top:18px; width:100%;">Scan Another</button>
+            </div>
+
+            <div id="failStatus" class="hidden">
+                <div style="background:#fee2e2; padding:20px; border-radius:12px; border:2px solid #ef4444;">
+                    <h3 style="font-size:22px; color:#b91c1c; display:flex; align-items:center; gap:10px;">
+                        <i data-lucide="x-circle"></i> Match Failed
+                    </h3>
+                    <p id="failMessage" style="margin-top:10px; color:#b91c1c;">
+                        Unable to match face with stored record.
+                    </p>
+                    <ul style="margin-top:10px; color:#7f1d1d; font-size:15px;">
+                        <li>Ensure full face (eyes, nose, mouth) is clearly visible</li>
+                        <li>Face is centered and close to the camera</li>
+                        <li>Avoid masks, caps, or heavy shadows</li>
+                    </ul>
+                </div>
+
+                <button onclick="resetAll()" class="btn-outline" style="margin-top:15px; width:100%;">Try Again</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Icons
+    lucide.createIcons();
+
+    // Backend endpoint
+    const API_URL = "http://127.0.0.1:5000/recognize";
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const scanOverlay = document.getElementById("scanOverlay");
+
+    const startBtn = document.getElementById("startBtn");
+    const recBtn   = document.getElementById("recBtn");
+    const stopBtn  = document.getElementById("stopBtn");
+
+    const idleStatus    = document.getElementById("idleStatus");
+    const scanStatus    = document.getElementById("scanStatus");
+    const successStatus = document.getElementById("successStatus");
+    const failStatus    = document.getElementById("failStatus");
+    const staffDetails  = document.getElementById("staffDetails");
+    const failMessage   = document.getElementById("failMessage");
+    const matchBanner   = document.getElementById("matchBanner");
+
+    const refImage  = document.getElementById("refImage");
+    const liveImage = document.getElementById("liveImage");
+
+    let stream = null;
+
+    // ---------- START CAMERA ----------
+    startBtn.onclick = async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+
+            startBtn.classList.add("hidden");
+            recBtn.classList.remove("hidden");
+            stopBtn.classList.remove("hidden");
+
+            resetAll();
+        } catch (e) {
+            alert("Camera permission denied!");
+        }
+    };
+
+    // ---------- STOP CAMERA ----------
+    stopBtn.onclick = () => {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+
+        startBtn.classList.remove("hidden");
+        recBtn.classList.add("hidden");
+        stopBtn.classList.add("hidden");
+
+        resetAll();
+    };
+
+    // ---------- MATCH FACE BUTTON ----------
+    recBtn.onclick = async () => {
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+
+        if (!w || !h) {
+            alert("Video not ready yet. Please wait a second and try again.");
+            return;
+        }
+
+        // UI: scanning state
+        scanOverlay.style.display = "flex";
+        idleStatus.classList.add("hidden");
+        scanStatus.classList.remove("hidden");
+        successStatus.classList.add("hidden");
+        failStatus.classList.add("hidden");
+
+        // Capture frame as base64 & also keep for live preview
+        const { base64Image, dataUrl } = captureFrame();
+
+        // Show live preview image on right side (even before backend response)
+        liveImage.src = dataUrl;
+
+        // Send to backend for recognition + matching
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: base64Image })
+            });
+
+            const data = await res.json();
+
+            scanOverlay.style.display = "none";
+            scanStatus.classList.add("hidden");
+
+            if (!data.success) {
+                const msg = data.message || "Unable to match this face with any stored record.";
+                showFail(msg);
+                return;
+            }
+
+            // ---- Success path ----
+            // Backend should ideally return:
+            // data.match (true/false) and data.ref_image_url (URL of stored image)
+            const isMatch = data.match === true;  // default false if not present
+
+            // Fill staff details (if present)
+            staffDetails.innerHTML = `
+                <p><b>Name:</b> ${data.name || "Unknown"}</p>
+                <p><b>ID:</b> ${data.id || "N/A"}</p>
+                <p><b>Department:</b> ${data.department || "N/A"}</p>
+                <p><b>Shift:</b> ${data.shift || "N/A"}</p>
+            `;
+
+            // Reference image from backend, or fallback placeholder
+            if (data.ref_image_url) {
+                refImage.src = data.ref_image_url;
+            } else {
+                // You can replace this with a local placeholder image
+                refImage.src = "https://via.placeholder.com/400x250?text=Reference+Image+Not+Provided";
+            }
+
+            // Show match / no match banner
+            if (isMatch) {
+                matchBanner.innerHTML = `
+                    <div class="badge badge-success">
+                        <i data-lucide="badge-check"></i>
+                        <span>Faces Match – Identity Verified</span>
+                    </div>
+                `;
+                matchBanner.style.background = "#dcfce7";
+                matchBanner.style.border = "1px solid #22c55e";
+            } else {
+                matchBanner.innerHTML = `
+                    <div class="badge badge-fail">
+                        <i data-lucide="user-x"></i>
+                        <span>Faces Do Not Match – Verification Failed</span>
+                    </div>
+                `;
+                matchBanner.style.background = "#fee2e2";
+                matchBanner.style.border = "1px solid #ef4444";
+            }
+
+            // Re-render icons added dynamically
+            lucide.createIcons();
+
+            successStatus.classList.remove("hidden");
+
+        } catch (err) {
+            console.error(err);
+            scanOverlay.style.display = "none";
+            scanStatus.classList.add("hidden");
+            showFail("Error connecting to recognition server. Please check network.");
+        }
+    };
+
+    // ---------- CAPTURE FRAME ----------
+    function captureFrame() {
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        canvas.width = w;
+        canvas.height = h;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        const base64Image = dataUrl.split(",")[1]; // strip data:image/jpeg;base64,
+        return { base64Image, dataUrl };
+    }
+
+    // ---------- FAIL UI ----------
+    function showFail(msg) {
+        failMessage.textContent = msg;
+        failStatus.classList.remove("hidden");
+        idleStatus.classList.add("hidden");
+        successStatus.classList.add("hidden");
+    }
+
+    // ---------- RESET ----------
+    function resetAll() {
+        idleStatus.classList.remove("hidden");
+        scanStatus.classList.add("hidden");
+        successStatus.classList.add("hidden");
+        failStatus.classList.add("hidden");
+        scanOverlay.style.display = "none";
+        staffDetails.innerHTML = "";
+        matchBanner.innerHTML = "";
+        refImage.src = "";
+        liveImage.src = "";
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard App</title>
+    <!-- Load Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+/* --- SAME CSS AS YOUR CODE (NO CHANGES MADE) --- */
+:root {
+    --primary-blue: #2A68F8;
+    --accent-green: #4CAF50;
+    --accent-red: #E57373;
+    --bg-light: #F8F8F8;
+    --text-dark: #333333;
+    --text-light: #FFFFFF;
+    --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --priority-high: #F44336;
+    --priority-medium: #FFC107;
+    --priority-low: #4CAF50;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-light);
+    margin: 0;
+}
+
+.dashboard-container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    padding-bottom: 70px;
+}
+
+.hidden-view { display: none; }
+.card { padding: 20px; border-radius: 12px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+.action-card { cursor: pointer; transition: 0.2s; }
+.action-card:hover { transform: translateY(-2px); }
+
+/* bottom nav */
+.bottom-nav {
+    position: fixed; bottom: 0; width: 100%; max-width: 400px;
+    background: white; height: 65px; display: flex; justify-content: space-around;
+    border-top: 1px solid #eee;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.75em; padding-top: 5px; color: #777; }
+.nav-item.active { color: var(--primary-blue); font-weight: 600; }
+</style>
+
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- HOME VIEW -->
+    <div id="home-view">
+        <section class="card" style="background: var(--primary-blue); color: white;">
+            <p>Good Morning</p>
+            <h1 style="font-size: 1.8em; margin: 5px 0;">Dr. Kavya Sharma</h1>
+            <span style="padding: 5px 12px; background: var(--accent-green); border-radius: 12px;">On Duty</span>
+
+            <div style="margin-top: 15px;">
+                <p>Today's Shift</p>
+                <h2>10:00 AM - 6:00 PM</h2>
+                <p>ICU</p>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-2 gap-4 px-4">
+            <div class="card action-card" data-action-view="attend-view">
+                <i class="fas fa-qrcode text-3xl text-[#2A68F8] mb-3"></i>
+                <p>Mark Attendance</p>
+            </div>
+
+            <div class="card action-card" data-action-view="shifts-view">
+                <i class="far fa-calendar-alt text-3xl text-[#2A68F8] mb-3"></i>
+                <p>View Shifts</p>
+            </div>
+
+            <div class="card action-card">
+                <i class="far fa-file-alt text-3xl text-[#2A68F8] mb-3"></i>
+                <p>Apply Leave</p>
+            </div>
+
+            <div class="card action-card" style="border: 2px solid var(--accent-red);">
+                <i class="fas fa-exclamation-circle text-3xl text-red-500 mb-3"></i>
+                <p>Emergencies</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- SHIFTS VIEW -->
+    <div id="shifts-view" class="hidden-view px-4 py-4">
+        <h1 class="text-xl font-bold mb-4">My Shifts</h1>
+
+        <div class="card">
+            <h3>General Ward</h3>
+            <p>09:00 AM - 02:00 PM</p>
+        </div>
+
+        <div class="card">
+            <h3>ICU</h3>
+            <p>02:00 PM - 10:00 PM</p>
+        </div>
+    </div>
+
+    <!-- ATTEND VIEW -->
+    <div id="attend-view" class="hidden-view px-4 py-4">
+        <h1 class="text-xl font-bold mb-4">Attendance</h1>
+
+        <div class="card text-center">
+            <i class="fas fa-qrcode text-6xl text-[#2A68F8]"></i>
+            <p class="mt-3">Scan QR Code to Mark Attendance</p>
+            <button class="mt-4 px-5 py-2 bg-[#2A68F8] text-white rounded-full">Open Scanner</button>
+        </div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div id="chat-view" class="hidden-view px-4 py-4">
+        <h1 class="text-xl font-bold">Chat</h1>
+        <p>Chat module coming soon...</p>
+    </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+    <a class="nav-item active" data-view="home-view"><i class="fas fa-home"></i>Home</a>
+    <a class="nav-item" data-view="shifts-view"><i class="far fa-calendar-alt"></i>Shifts</a>
+    <a class="nav-item" data-view="attend-view"><i class="fas fa-qrcode"></i>Attend</a>
+    <a class="nav-item" data-view="chat-view"><i class="far fa-comment-dots"></i>Chat</a>
+</nav>
+
+<script>
+// VIEW SWITCHING
+const viewMap = {
+    "home-view": document.getElementById("home-view"),
+    "shifts-view": document.getElementById("shifts-view"),
+    "attend-view": document.getElementById("attend-view"),
+    "chat-view": document.getElementById("chat-view")
+};
+
+const navItems = document.querySelectorAll(".nav-item");
+
+function switchView(viewId) {
+    Object.values(viewMap).forEach(v => v.classList.add("hidden-view"));
+    viewMap[viewId].classList.remove("hidden-view");
+
+    navItems.forEach(i => i.classList.remove("active"));
+    document.querySelector(`.nav-item[data-view="${viewId}"]`).classList.add("active"); // FIXED
+}
+
+navItems.forEach(item => {
+    item.addEventListener("click", () => {
+        switchView(item.getAttribute("data-view"));
+    });
+});
+
+document.querySelectorAll('.action-card[data-action-view]').forEach(card => {
+    card.addEventListener('click', () => {
+        const viewId = card.getAttribute('data-action-view');
+        switchView(viewId);
+    });
+});
+</script>
+
+</body>
+</html>
